@@ -1,0 +1,7 @@
+apiVersion: v1
+description: Transmission with OpenVPN
+name: Transmission
+version: 20180626.01
+appVersion: 20180626.01
+sources:
+- https://transmissionbt.com/

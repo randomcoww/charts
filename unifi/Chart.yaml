@@ -1,0 +1,7 @@
+apiVersion: v1
+description: Unifi Controller
+name: Unifi
+version: 5.8.24
+appVersion: 5.8.24
+sources:
+- https://www.ubnt.com/download/unifi
