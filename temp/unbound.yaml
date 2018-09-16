@@ -42,7 +42,7 @@ spec:
       restartPolicy: Always
       containers:
       - name: unbound
-        image: randomcoww/unbound:20180626.01
+        image: randomcoww/unbound:20180913.01
         volumeMounts:
         - name: config-volume
           mountPath: /etc/unbound/unbound.conf.d

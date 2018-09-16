@@ -71,7 +71,7 @@ spec:
     spec:
       containers:
       - name: mpd
-        image: randomcoww/mpd:0.20.20
+        image: randomcoww/mpd:20180913.01
         ports:
         - containerPort: 8000
           protocol: TCP

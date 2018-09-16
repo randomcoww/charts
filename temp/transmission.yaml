@@ -80,7 +80,7 @@ spec:
 
       initContainers:
       - name: nftables
-        image: randomcoww/nftables:20180628.01
+        image: randomcoww/nftables:20180913.01
         securityContext:
           capabilities:
             add:
@@ -101,7 +101,7 @@ spec:
 
       containers:
       - name: openvpn
-        image: randomcoww/openvpn:20180628.01
+        image: randomcoww/openvpn:20180913.01
         securityContext:
           capabilities:
             add:
@@ -189,7 +189,7 @@ spec:
             YDQ8z9v+DMO6iwyIDRiU
             -----END CERTIFICATE-----
       - name: transmission
-        image: randomcoww/transmission:20180626.01
+        image: randomcoww/transmission:20180913.01
         securityContext:
           capabilities:
             add:
