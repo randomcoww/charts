@@ -69,6 +69,7 @@ spec:
       labels:
         k8s-app: mpd
     spec:
+      dnsPolicy: ClusterFirstWithHostNet
       containers:
       - name: mpd
         image: randomcoww/mpd:20180913.01

@@ -69,6 +69,7 @@ spec:
       labels:
         k8s-app: transmission
     spec:
+      dnsPolicy: ClusterFirstWithHostNet
       restartPolicy: Always
       volumes:
       - name: torrent-data

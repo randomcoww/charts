@@ -41,6 +41,7 @@ spec:
       labels:
         k8s-app: unifi
     spec:
+      dnsPolicy: ClusterFirstWithHostNet
       restartPolicy: Always
       containers:
       - name: unifi

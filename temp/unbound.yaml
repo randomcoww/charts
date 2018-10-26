@@ -39,6 +39,7 @@ spec:
       labels:
         k8s-app: unbound
     spec:
+      dnsPolicy: Default
       restartPolicy: Always
       containers:
       - name: unbound
