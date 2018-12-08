@@ -45,7 +45,7 @@ spec:
       restartPolicy: Always
       containers:
       - name: unifi
-        image: randomcoww/unifi:5.8.30
+        image: randomcoww/unifi:5.9.29
         lifecycle:
           preStop:
             exec:
