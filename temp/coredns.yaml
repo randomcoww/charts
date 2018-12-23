@@ -61,7 +61,7 @@ data:
           fallthrough in-addr.arpa ip6.arpa
         }
         prometheus :9153
-        proxy . 192.168.127.254
+        proxy . 192.168.126.241
         cache 30
         loop
         reload
