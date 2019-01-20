@@ -11,7 +11,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   nfs:
     path: "/data/pv/unifi"
-    server: 192.168.126.251
+    server: 192.168.127.251
     readOnly: false
 
 ---
@@ -71,6 +71,7 @@ metadata:
   name: unifi-service
 spec:
   type: LoadBalancer
+  loadBalancerIP: 192.168.127.130
   ports:
   - name: http
     port: 8080
