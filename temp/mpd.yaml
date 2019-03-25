@@ -11,7 +11,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   nfs:
     path: "/vol/music/brick"
-    server: 192.168.126.251
+    server: 192.168.127.251
     readOnly: true
 
 ---
@@ -39,7 +39,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   nfs:
     path: "/data/pv/mpd"
-    server: 192.168.126.251
+    server: 192.168.127.251
     readOnly: false
 
 ---
@@ -95,7 +95,9 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: mpd-service
+  name: mpd
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: mpd.host.internal
 spec:
   type: LoadBalancer
   ports:
