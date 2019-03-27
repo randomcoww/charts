@@ -11,7 +11,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   nfs:
     path: "/vol/torrent"
-    server: 192.168.127.251
+    server: 169.254.169.254
     readOnly: false
 
 ---
@@ -39,7 +39,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   nfs:
     path: "/data/pv/transmission"
-    server: 192.168.127.251
+    server: 169.254.169.254
     readOnly: false
 
 ---
@@ -69,6 +69,8 @@ spec:
       labels:
         k8s-app: transmission
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: worker-0
       dnsPolicy: ClusterFirstWithHostNet
       restartPolicy: Always
       volumes:
@@ -95,7 +97,7 @@ spec:
                 ct state { established, related } accept
                 oifname "tun*" accept
                 skgid { "nobody" } accept
-                ip daddr { 192.168.0.0/16, 10.0.0.0/8 } accept
+                ip daddr { 192.168.0.0/16, 10.0.0.0/8, 169.254.0.0/16 } accept
               }
             }
             ;
@@ -258,6 +260,7 @@ spec:
               "rpc-username": "transmission",
               "rpc-whitelist": "127.0.0.1",
               "rpc-whitelist-enabled": false,
+              "rpc-host-whitelist": "*.internal",
               "scrape-paused-torrents-enabled": true,
               "script-torrent-done-enabled": false,
               "script-torrent-done-filename": "",
@@ -280,10 +283,11 @@ spec:
 kind: Service
 apiVersion: v1
 metadata:
-  name: transmission-service
+  name: transmission
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: tr.svc.internal
 spec:
   type: LoadBalancer
-  loadBalancerIP: 192.168.127.129
   ports:
   - name: webui
     port: 80
