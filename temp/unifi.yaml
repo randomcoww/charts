@@ -58,6 +58,8 @@ spec:
           protocol: TCP
         - containerPort: 8443
           protocol: TCP
+        - containerPort: 3478
+          protocol: UDP
         volumeMounts:
         - mountPath: "/opt/UniFi/data"
           name: unifi-data
@@ -72,15 +74,29 @@ apiVersion: v1
 metadata:
   name: unifi
   annotations:
+    metallb.universe.tf/allow-shared-ip: unifi
     external-dns.alpha.kubernetes.io/hostname: unifi.host.internal
 spec:
   type: LoadBalancer
   ports:
   - name: http
     port: 8080
-    targetPort: 8080
   - name: https
     port: 8443
-    targetPort: 8443
+  selector:
+    k8s-app: unifi
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: unifi-stun
+  annotations:
+    metallb.universe.tf/allow-shared-ip: unifi
+spec:
+  type: LoadBalancer
+  ports:
+  - name: stun
+    port: 3478
+    protocol: UDP
   selector:
     k8s-app: unifi
