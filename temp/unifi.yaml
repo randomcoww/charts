@@ -11,7 +11,7 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   nfs:
     path: "/data/pv/unifi"
-    server: 192.168.127.251
+    server: 169.254.169.254
     readOnly: false
 
 ---
@@ -41,11 +41,13 @@ spec:
       labels:
         k8s-app: unifi
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: worker-0
       dnsPolicy: ClusterFirstWithHostNet
       restartPolicy: Always
       containers:
       - name: unifi
-        image: randomcoww/unifi:5.9.29
+        image: randomcoww/unifi:5.10.20
         lifecycle:
           preStop:
             exec:
@@ -73,7 +75,6 @@ metadata:
     external-dns.alpha.kubernetes.io/hostname: unifi.host.internal
 spec:
   type: LoadBalancer
-  loadBalancerIP: 192.168.127.130
   ports:
   - name: http
     port: 8080
