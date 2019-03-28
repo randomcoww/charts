@@ -42,7 +42,7 @@ spec:
         k8s-app: unifi
     spec:
       nodeSelector:
-        kubernetes.io/hostname: worker-0
+        storage: persistent
       dnsPolicy: ClusterFirstWithHostNet
       restartPolicy: Always
       containers:
