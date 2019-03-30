@@ -75,7 +75,7 @@ metadata:
   name: unifi
   annotations:
     metallb.universe.tf/allow-shared-ip: unifi
-    external-dns.alpha.kubernetes.io/hostname: unifi.host.internal
+    external-dns.alpha.kubernetes.io/hostname: unifi.fuzzybunny.internal
 spec:
   type: LoadBalancer
   ports:
