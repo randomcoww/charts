@@ -36,9 +36,9 @@ spec:
     imagePullPolicy: IfNotPresent
     env:
     - name: E2E_FOCUS
-      value: "Conformance"
+      value: '\[Conformance\]'
     - name: E2E_SKIP
-      value: "Alpha|Disruptive|Feature|Flaky|Kubectl"
+      value: 'Alpha|\[(Disruptive|Feature:[^\]]+|Flaky)\]'
     - name: E2E_PROVIDER
       value: local
     volumeMounts:

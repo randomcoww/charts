@@ -70,7 +70,7 @@ spec:
         k8s-app: transmission
     spec:
       nodeSelector:
-        storage: persistent
+        kubernetes.io/hostname: worker-0
       dnsPolicy: ClusterFirstWithHostNet
       restartPolicy: Always
       volumes:

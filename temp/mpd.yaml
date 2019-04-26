@@ -70,7 +70,7 @@ spec:
         k8s-app: mpd
     spec:
       nodeSelector:
-        storage: persistent
+        kubernetes.io/hostname: worker-0
       dnsPolicy: ClusterFirstWithHostNet
       containers:
       - name: mpd
