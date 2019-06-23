@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: glusterfs
+spec:
+  serviceName: glusterfs
+  replicas: 2
+  selector:
+    matchLabels:
+      app: glusterfs
+  template:
+    metadata:
+      labels:
+        app: glusterfs
+    spec:
+      hostNetwork: true
+      subdomain: glusterfs
+      dnsPolicy: ClusterFirstWithHostNet
+      volumes:
+      - name: gluster
+        persistentVolumeClaim:
+          claimName: example-local-claim
+      - name: glustermeta
+        nfs:
+          path: "/data/glustermeta"
+          server: 169.254.169.254
+      containers:
+      - name: glusterfs
+        image: randomcoww/glusterfs:20190615.02
+        volumeDevices:
+        - devicePath: /dev/block
+          name: gluster
+        volumeMounts:
+        - name: glustermeta
+          mountPath: /var/lib/glusterd
+        securityContext:
+          privileged: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: glusterfs
+  labels:
+    app: glusterfs
+spec:
+  clusterIP: None
+  selector:
+    app: glusterfs

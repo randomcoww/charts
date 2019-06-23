@@ -9,9 +9,9 @@ spec:
   accessModes:
   - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
-  nfs:
-    path: "/data/pv/unifi"
-    server: 169.254.169.254
+  glusterfs:
+    endpoints: glusterfs
+    path: /unifi
     readOnly: false
 
 ---
@@ -41,8 +41,6 @@ spec:
       labels:
         k8s-app: unifi
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: worker-0
       dnsPolicy: ClusterFirstWithHostNet
       restartPolicy: Always
       containers:
