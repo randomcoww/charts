@@ -37,9 +37,9 @@ spec:
   accessModes:
   - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
-  nfs:
-    path: "/data/pv/transmission"
-    server: 169.254.169.254
+  glusterfs:
+    endpoints: glusterfs
+    path: /transmission
     readOnly: false
 
 ---
