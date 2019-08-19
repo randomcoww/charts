@@ -1,0 +1,110 @@
+---
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: transmission-tgt
+spec:
+  selector:
+    matchLabels:
+      app: transmission-tgt
+  template:
+    metadata:
+      labels:
+        app: transmission-tgt
+    spec:
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      initContainers:
+      - name: configwriter
+        image: busybox:latest
+        imagePullPolicy: IfNotPresent
+        args: [ "/bin/sh", "-c", "echo -en \"$CONFIG\" > $CONFIG_PATH" ]
+        env:
+        - name: CONFIG
+          value: |-
+            {"storages":[{"deviceID":1000,"path":"file:/data/file","online":true}],
+            "iscsiportals":[{"id":0,"portal":"127.0.0.1:3260"}],
+            "iscsitargets":{"iqn.2016-09.com.gotgt.gostor:transmission":{"tpgts":{"1":[0]},"luns":{"0":1000}}}}
+        - name: CONFIG_PATH
+          value: /gotgt/config.json
+        volumeMounts:
+        - name: config-volume
+          mountPath: /gotgt
+      containers:
+      - name: s3backer
+        securityContext:
+          privileged: true
+        image: randomcoww/s3backer:1.5.2
+        args:
+        - -d
+        - --accessId=minio-b
+        - --accessKey=minio-b-key
+        - --baseURL=http://169.254.169.254:9001/
+        - --blockSize=128k 
+        - --size=800g
+        - --listBlocks
+        - --force
+        - transmission
+        - /data
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - "umount"
+              - "/mnt"
+        volumeMounts:
+        - name: data
+          mountPath: /data
+          mountPropagation: Bidirectional
+      - name: gotgt
+        securityContext:
+          privileged: true
+        image: randomcoww/gotgt:20190815.01
+        args:
+        - daemon
+        - --log
+        - debug
+        volumeMounts:
+        - name: config-volume
+          mountPath: /root/.gotgt
+        - name: data
+          mountPath: /data
+          mountPropagation: Bidirectional
+        ports:
+        - containerPort: 3260
+          protocol: TCP
+      volumes:
+      - name: data
+        emptyDir: {}
+      - name: config-volume
+        emptyDir: {}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: transmission-pv
+spec:
+  capacity:
+    storage: 800Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: transmission-tgt
+  iscsi:
+    targetPortal: 127.0.0.1
+    iqn: iqn.2016-09.com.gotgt.gostor:transmission
+    lun: 0
+    fsType: 'ext4'
+    readOnly: false
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: transmission-pvc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: transmission-tgt
+  resources:
+    requests:
+      storage: 800Gi

@@ -1,62 +1,6 @@
 ---
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: torrent-nfs-pv
-spec:
-  capacity:
-    storage: 1Gi
-  accessModes:
-  - ReadWriteMany
-  persistentVolumeReclaimPolicy: Retain
-  nfs:
-    path: "/vol/torrent"
-    server: 169.254.169.254
-    readOnly: false
-
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: torrent-nfs-pvc
-spec:
-  accessModes:
-  - ReadWriteMany
-  resources:
-    requests:
-      storage: 1Gi
-
----
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: transmission-nfs-pv
-spec:
-  capacity:
-    storage: 1Gi
-  accessModes:
-  - ReadWriteMany
-  persistentVolumeReclaimPolicy: Retain
-  glusterfs:
-    endpoints: glusterfs
-    path: /transmission
-    readOnly: false
-
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: transmission-nfs-pvc
-spec:
-  accessModes:
-  - ReadWriteMany
-  resources:
-    requests:
-      storage: 1Gi
-
----
 kind: Deployment
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 metadata:
   name: transmission
 spec:
@@ -74,13 +18,9 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       restartPolicy: Always
       volumes:
-      - name: torrent-data
-        persistentVolumeClaim:
-          claimName: torrent-nfs-pvc
       - name: transmission-data
         persistentVolumeClaim:
-          claimName: transmission-nfs-pvc
-
+          claimName: transmission-pvc
       initContainers:
       - name: nftables
         image: randomcoww/nftables:20190119.01
@@ -200,8 +140,6 @@ spec:
         ports:
         - containerPort: 9091
         volumeMounts:
-        - name: torrent-data
-          mountPath: "/data"
         - name: transmission-data
           mountPath: "/var/lib/transmission"
         env:
@@ -221,7 +159,7 @@ spec:
               "blocklist-url": "http://www.example.com/blocklist",
               "cache-size-mb": 4,
               "dht-enabled": true,
-              "download-dir": "/data/downloads",
+              "download-dir": "/var/lib/transmission/downloads",
               "download-limit": 100,
               "download-limit-enabled": 0,
               "download-queue-enabled": true,
@@ -229,7 +167,7 @@ spec:
               "encryption": 1,
               "idle-seeding-limit": 30,
               "idle-seeding-limit-enabled": false,
-              "incomplete-dir": "/data/incomplete",
+              "incomplete-dir": "/var/lib/transmission/incomplete",
               "incomplete-dir-enabled": true,
               "lpd-enabled": false,
               "max-peers-global": 200,
