@@ -1,0 +1,218 @@
+---
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: s3backer-tgt
+spec:
+  selector:
+    matchLabels:
+      app: s3backer-tgt
+  template:
+    metadata:
+      labels:
+        app: s3backer-tgt
+    spec:
+      dnsPolicy: ClusterFirstWithHostNet
+      hostNetwork: true
+      initContainers:
+      - name: configwriter
+        image: busybox:latest
+        imagePullPolicy: IfNotPresent
+        args: [ "/bin/sh", "-c", "echo -e \"$CONFIG\" > $CONFIG_PATH" ]
+        env:
+        - name: CONFIG
+          value: |
+            {
+              "storages": [
+                {
+                  "deviceID": 1000,
+                  "path": "file:/transmission/file",
+                  "online": true
+                },
+                {
+                  "deviceID": 1001,
+                  "path": "file:/unifi/file",
+                  "online": true
+                }
+              ],
+              "iscsiportals": [
+                {
+                  "id": 0,
+                  "portal": "127.0.0.1:3260"
+                },
+                {
+                  "id": 1,
+                  "portal": "127.0.0.1:3260"
+                }
+              ],
+              "iscsitargets": {
+                "iqn.2016-09.com.gotgt.gostor:transmission": {
+                  "tpgts": {
+                    "1": [
+                      0
+                    ]
+                  },
+                  "luns": {
+                    "0": 1000
+                  }
+                },
+                "iqn.2016-09.com.gotgt.gostor:unifi": {
+                  "tpgts": {
+                    "1": [
+                      1
+                    ]
+                  },
+                  "luns": {
+                    "0": 1001
+                  }
+                }
+              }
+            }
+        - name: CONFIG_PATH
+          value: /gotgt/config.json
+        volumeMounts:
+        - name: config-volume
+          mountPath: /gotgt
+      containers:
+      - name: gotgt
+        securityContext:
+          privileged: true
+        image: randomcoww/gotgt:20190815.01
+        args:
+        - daemon
+        - --log
+        - debug
+        volumeMounts:
+        - name: config-volume
+          mountPath: /root/.gotgt
+        - name: transmission
+          mountPath: /transmission
+          mountPropagation: Bidirectional
+        - name: unifi
+          mountPath: /unifi
+          mountPropagation: Bidirectional
+        ports:
+        - containerPort: 3260
+          protocol: TCP
+
+      - name: s3backer-transmission
+        securityContext:
+          privileged: true
+        image: randomcoww/s3backer:1.5.2
+        args:
+        - -d
+        - --accessId=minio-b
+        - --accessKey=minio-b-key
+        - --baseURL=http://169.254.169.254:9001/
+        - --blockSize=128k 
+        - --size=800g
+        - --listBlocks
+        - --force
+        - transmission
+        - /transmission
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - "umount"
+              - "/mnt"
+        volumeMounts:
+        - name: transmission
+          mountPath: /transmission
+          mountPropagation: Bidirectional
+
+      - name: s3backer-unifi
+        securityContext:
+          privileged: true
+        image: randomcoww/s3backer:1.5.2
+        args:
+        - -d
+        - --accessId=minio-b
+        - --accessKey=minio-b-key
+        - --baseURL=http://169.254.169.254:9001/
+        - --blockSize=128k 
+        - --size=2g
+        - --listBlocks
+        - --force
+        - unifi
+        - /unifi
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - "umount"
+              - "/mnt"
+        volumeMounts:
+        - name: unifi
+          mountPath: /unifi
+          mountPropagation: Bidirectional
+
+      volumes:
+      - name: transmission
+        emptyDir: {}
+      - name: unifi
+        emptyDir: {}
+      - name: config-volume
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: transmission-pv
+spec:
+  capacity:
+    storage: 800Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: transmission-tgt
+  iscsi:
+    targetPortal: 127.0.0.1
+    iqn: iqn.2016-09.com.gotgt.gostor:transmission
+    lun: 0
+    fsType: 'ext4'
+    readOnly: false
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: transmission-pvc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: transmission-tgt
+  resources:
+    requests:
+      storage: 800Gi
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: unifi-pv
+spec:
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: unifi-tgt
+  iscsi:
+    targetPortal: 127.0.0.1
+    iqn: iqn.2016-09.com.gotgt.gostor:unifi
+    lun: 0
+    fsType: 'ext4'
+    readOnly: false
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: unifi-pvc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: unifi-tgt
+  resources:
+    requests:
+      storage: 2Gi
