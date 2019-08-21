@@ -1,0 +1,50 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: minio-a
+spec:
+  hostNetwork: true
+  subdomain: minio-a
+  volumes:
+  - name: s3
+    hostPath:
+      path: "/s3"
+  containers:
+  - name: minio-a
+    env:
+    - name: MINIO_STORAGE_CLASS_STANDARD
+      value: "EC:2"
+    - name: MINIO_STORAGE_CLASS_RRS
+      value: "EC:2"
+    - name: MINIO_ACCESS_KEY
+      value: "minio-a"
+    - name: MINIO_SECRET_KEY
+      value: "minio-a-key"
+    image: minio/minio:RELEASE.2019-08-01T22-18-54Z
+    args:
+    - server
+    - --address
+    - :9000
+    - http://192.168.127.251:9000/s3/minio-a00/vol
+    - http://192.168.127.251:9000/s3/minio-a01/vol
+    - http://192.168.127.251:9000/s3/minio-a02/vol
+    - http://192.168.127.251:9000/s3/minio-a03/vol
+    - http://192.168.127.251:9000/s3/minio-a04/vol
+    - http://192.168.127.251:9000/s3/minio-a05/vol
+    - http://192.168.127.251:9000/s3/minio-a06/vol
+    - http://192.168.127.251:9000/s3/minio-a07/vol
+    - http://192.168.127.251:9000/s3/minio-a08/vol
+    - http://192.168.127.251:9000/s3/minio-a09/vol
+    - http://192.168.127.251:9000/s3/minio-a10/vol
+    - http://192.168.127.251:9000/s3/minio-a11/vol
+    ports:
+    - containerPort: 9000
+    volumeMounts:
+    - name: s3
+      mountPath: /s3
+    livenessProbe:
+      httpGet:
+        path: /minio/health/live
+        port: 9000
+      initialDelaySeconds: 120
+      periodSeconds: 20
