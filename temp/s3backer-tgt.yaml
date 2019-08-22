@@ -1,4 +1,58 @@
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tgt-config
+data:
+  config.json: |
+    {
+      "storages": [
+        {
+          "deviceID": 1000,
+          "path": "file:/transmission/file",
+          "online": true
+        },
+        {
+          "deviceID": 1001,
+          "path": "file:/unifi/file",
+          "online": true
+        }
+      ],
+      "iscsiportals": [
+        {
+          "id": 0,
+          "portal": "127.0.0.1:3260"
+        },
+        {
+          "id": 1,
+          "portal": "127.0.0.1:3260"
+        }
+      ],
+      "iscsitargets": {
+        "iqn.2016-09.com.gotgt.gostor:transmission": {
+          "tpgts": {
+            "1": [
+              0
+            ]
+          },
+          "luns": {
+            "0": 1000
+          }
+        },
+        "iqn.2016-09.com.gotgt.gostor:unifi": {
+          "tpgts": {
+            "1": [
+              1
+            ]
+          },
+          "luns": {
+            "0": 1001
+          }
+        }
+      }
+    }
+
+---
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
@@ -14,65 +68,15 @@ spec:
     spec:
       dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
-      initContainers:
-      - name: configwriter
-        image: busybox:latest
-        imagePullPolicy: IfNotPresent
-        args: [ "/bin/sh", "-c", "echo -e \"$CONFIG\" > $CONFIG_PATH" ]
-        env:
-        - name: CONFIG
-          value: |
-            {
-              "storages": [
-                {
-                  "deviceID": 1000,
-                  "path": "file:/transmission/file",
-                  "online": true
-                },
-                {
-                  "deviceID": 1001,
-                  "path": "file:/unifi/file",
-                  "online": true
-                }
-              ],
-              "iscsiportals": [
-                {
-                  "id": 0,
-                  "portal": "127.0.0.1:3260"
-                },
-                {
-                  "id": 1,
-                  "portal": "127.0.0.1:3260"
-                }
-              ],
-              "iscsitargets": {
-                "iqn.2016-09.com.gotgt.gostor:transmission": {
-                  "tpgts": {
-                    "1": [
-                      0
-                    ]
-                  },
-                  "luns": {
-                    "0": 1000
-                  }
-                },
-                "iqn.2016-09.com.gotgt.gostor:unifi": {
-                  "tpgts": {
-                    "1": [
-                      1
-                    ]
-                  },
-                  "luns": {
-                    "0": 1001
-                  }
-                }
-              }
-            }
-        - name: CONFIG_PATH
-          value: /gotgt/config.json
-        volumeMounts:
-        - name: config-volume
-          mountPath: /gotgt
+      volumes:
+      - name: tgt-config
+        configMap:
+          name: tgt-config
+      - name: transmission
+        emptyDir: {}
+      - name: unifi
+        emptyDir: {}
+
       containers:
       - name: gotgt
         securityContext:
@@ -83,7 +87,7 @@ spec:
         - --log
         - debug
         volumeMounts:
-        - name: config-volume
+        - name: tgt-config
           mountPath: /root/.gotgt
         - name: transmission
           mountPath: /transmission
@@ -146,14 +150,6 @@ spec:
         - name: unifi
           mountPath: /unifi
           mountPropagation: Bidirectional
-
-      volumes:
-      - name: transmission
-        emptyDir: {}
-      - name: unifi
-        emptyDir: {}
-      - name: config-volume
-        emptyDir: {}
 
 ---
 apiVersion: v1
