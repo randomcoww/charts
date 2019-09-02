@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: minio-b
+spec:
+  serviceName: minio-b
+  replicas: 2
+  selector:
+    matchLabels:
+      app: minio-b
+  template:
+    metadata:
+      labels:
+        app: minio-b
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      volumes:
+      - name: s3
+        hostPath:
+          path: "/pv/s3"
+          type: DirectoryOrCreate
+      containers:
+      - name: minio
+        env:
+        - name: MINIO_ACCESS_KEY
+          value: "minio-b"
+        - name: MINIO_SECRET_KEY
+          value: "minio-b-key"
+        image: minio/minio:RELEASE.2019-08-29T00-25-01Z
+        args:
+        - server
+        - --address
+        - :9001
+        - http://minio-b-0.minio-b.default.svc.cluster.local/m/b00
+        - http://minio-b-0.minio-b.default.svc.cluster.local/m/b01
+        - http://minio-b-0.minio-b.default.svc.cluster.local/m/b02
+        - http://minio-b-1.minio-b.default.svc.cluster.local/m/b00
+        - http://minio-b-1.minio-b.default.svc.cluster.local/m/b01
+        - http://minio-b-1.minio-b.default.svc.cluster.local/m/b02
+        ports:
+        - containerPort: 9001
+        volumeMounts:
+        - name: s3
+          mountPath: /m
+        livenessProbe:
+          httpGet:
+            path: /minio/health/live
+            port: 9001
+          initialDelaySeconds: 120
+          periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-b
+  labels:
+    app: minio-b
+spec:
+  clusterIP: None
+  ports:
+  - port: 9001
+  selector:
+    app: minio-b
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-b-ui
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: minio-b.fuzzybunny.internal
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 9001
+    protocol: TCP
+  selector:
+    app: minio-b

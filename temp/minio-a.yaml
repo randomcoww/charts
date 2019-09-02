@@ -1,0 +1,90 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: minio-a
+spec:
+  serviceName: minio-a
+  replicas: 2
+  selector:
+    matchLabels:
+      app: minio-a
+  template:
+    metadata:
+      labels:
+        app: minio-a
+    spec:
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      volumes:
+      - name: s3
+        hostPath:
+          path: "/s3"
+          type: DirectoryOrCreate
+      containers:
+      - name: minio
+        env:
+        - name: MINIO_STORAGE_CLASS_STANDARD
+          value: "EC:2"
+        - name: MINIO_STORAGE_CLASS_RRS
+          value: "EC:2"
+        - name: MINIO_ACCESS_KEY
+          value: "minio-a"
+        - name: MINIO_SECRET_KEY
+          value: "minio-a-key"
+        image: minio/minio:RELEASE.2019-08-29T00-25-01Z
+        args:
+        - server
+        - --address
+        - :9000
+        - http://minio-a-0.minio-a.default.svc.cluster.local/m/a00
+        - http://minio-a-0.minio-a.default.svc.cluster.local/m/a01
+        - http://minio-a-0.minio-a.default.svc.cluster.local/m/a02
+        - http://minio-a-0.minio-a.default.svc.cluster.local/m/a03
+        - http://minio-a-0.minio-a.default.svc.cluster.local/m/a04
+        - http://minio-a-0.minio-a.default.svc.cluster.local/m/a05
+        - http://minio-a-1.minio-a.default.svc.cluster.local/m/a00
+        - http://minio-a-1.minio-a.default.svc.cluster.local/m/a01
+        - http://minio-a-1.minio-a.default.svc.cluster.local/m/a02
+        - http://minio-a-1.minio-a.default.svc.cluster.local/m/a03
+        - http://minio-a-1.minio-a.default.svc.cluster.local/m/a04
+        - http://minio-a-1.minio-a.default.svc.cluster.local/m/a05
+        ports:
+        - containerPort: 9000
+        volumeMounts:
+        - name: s3
+          mountPath: /m
+        livenessProbe:
+          httpGet:
+            path: /minio/health/live
+            port: 9000
+          initialDelaySeconds: 120
+          periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-a
+  labels:
+    app: minio-a
+spec:
+  clusterIP: None
+  ports:
+  - port: 9000
+  selector:
+    app: minio-a
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-a-ui
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: minio-a.fuzzybunny.internal
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 9000
+    protocol: TCP
+  selector:
+    app: minio-a
